@@ -1,0 +1,33 @@
+.container{
+    position: relative;
+    display: flex;
+    flex-wrap: nowrap;
+    height: 100vh;
+}
+
+.container span{
+    width: 100px;
+    height: 150px;
+    font-family: Tahoma;
+    font-size: 40px;
+    margin-right: 10px;
+    background-color: #eeeff2;
+    border-left: 10px dotted #D0D0FF;
+    padding: 10px;
+}
+
+.container span:hover{
+    cursor: pointer;
+    background-color: yellow;
+    color: goldenrod;
+}
+
+.container span:not(:last-child) {
+    margin-bottom: auto; 
+}
+
+.container span:last-child {
+    position: absolute; 
+    bottom: 0;          
+    right: 0;          
+}
