@@ -1,0 +1,54 @@
+/* General reset for body to ensure consistent styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f4f4f4;
+}
+
+
+/* Header section containing month navigation and title */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.header button {
+    padding: 5px 10px;
+    cursor: pointer;
+    background: #007bff;
+    border: none;
+    color: white;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.header button:hover {
+    background: #0056b3;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    width: 14.28%;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+.dim {
+    color: #aaa;
+}
+
+
+.day:hover {
+    background-color: #f0f0f0;
+    cursor: pointer;
+}
+
+
