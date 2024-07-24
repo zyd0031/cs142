@@ -33,3 +33,8 @@
 .cs142-code-name {
   font-family: Courier New, monospace;
 }
+
+.motto-update{
+  background-color: aliceblue;
+  display: inline-block;
+}

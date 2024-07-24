@@ -26,6 +26,7 @@ class Example extends React.Component {
       counter: 0,
       inputValue: "",
       buttonWasClicked: "",
+      motto: window.cs142models.exampleModel().motto
     };
 
     // React events are called directly from DOM event handlers so we cannot
@@ -68,6 +69,9 @@ class Example extends React.Component {
   handleChange(event) {
     this.setState({ inputValue: event.target.value });
   }
+  handleMottoChange(event){
+    this.setState({motto: event.target.value});
+  }
 
   // Method called when the button is pushed
   /* eslint-disable-next-line no-unused-vars */
@@ -103,7 +107,12 @@ class Example extends React.Component {
         <h1>CS142 Project 4 React.js Example</h1>
 
         <div className="motto-update">
-          {/* Your Problem 1 motto displaying and updating widget goes here */}
+          <div>Name: {this.state.name}</div>
+          <div>Motto:
+            <input className="motto-input" type="text"
+            value={this.state.motto}
+            onChange={(event) => {this.handleMottoChange(event)}}/>
+          </div>
         </div>
 
         <p>

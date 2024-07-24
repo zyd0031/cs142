@@ -4,3 +4,8 @@
  * Since CSS uses a global name space for classes we should use names starting
  * with "cs142-states-" here.
  */
+ 
+input[type="text"]{
+    width: 15%;
+    margin-bottom: 10px;
+ }
