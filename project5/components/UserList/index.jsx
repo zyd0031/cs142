@@ -8,6 +8,7 @@ import {
   ListItemButton
 } from "@mui/material";
 import {Link} from "react-router-dom"
+import fetchModel from "../../lib/fetchModelData";
 
 import "./styles.css";
 
@@ -18,8 +19,13 @@ function UserList(){
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    const fetchedUsers = window.cs142models.userListModel();
-    setUsers(fetchedUsers);
+    fetchModel("/user/list")
+      .then(response => {
+        setUsers(response.data);
+      })
+      .catch(error => {
+        console.error("Fail to fetch userlist: ", error);
+      })
   }, []);
 
   return (

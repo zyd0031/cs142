@@ -1,7 +1,6 @@
 .nav-list{
     background-color: aliceblue;
     border-right: 2px solid cornsilk;
-    height: 100vh;
     overflow-y: auto;
 }
 

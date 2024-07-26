@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { Typography, Grid, Paper, Card, CardContent, CardMedia } from "@mui/material";
 import { format } from "date-fns";
 import { makeStyles } from "@mui/styles";
+import fetchModel from "../../lib/fetchModelData";
 
 
 const useStyles = makeStyles({
@@ -19,7 +20,7 @@ const useStyles = makeStyles({
     }
   },
   media: {
-    height: 194,
+    height: 200,
     overflow: "hidden"
   },
   commentSection: {
@@ -36,11 +37,17 @@ function UserPhotos() {
   const [photos, setPhotos] = useState([]);
 
   useEffect(() => {
-    const fetchPhotos = async () => {
-      const photosData = window.cs142models.photoOfUserModel(userId);
-      setPhotos(photosData || []);  
+    const fetchPhotos = async() => {
+      try{
+        const response = await fetchModel(`/photosOfUser/${userId}`);
+        setPhotos(response.data);
+      }catch (error){
+        console.error("Fail to fetch user photos: ", error);
+      }
     };
-    fetchPhotos();
+    if (userId){
+      fetchPhotos();
+    }
   }, [userId]);
 
   return (
@@ -50,7 +57,7 @@ function UserPhotos() {
           <Card className={classes.card}>
             <CardMedia
               component="img"
-              height="194"
+              height="200"
               image={`../../images/${photo.file_name}`}  
               alt={`Photo by ${photo.user_id}`}
               className={classes.media}

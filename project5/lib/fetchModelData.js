@@ -11,14 +11,26 @@
  * {string} statusText      The statusText from the xhr request
  */
 function fetchModel(url) {
-  return new Promise(function (resolve, reject) {
-    console.log(url);
-    setTimeout(() => reject(new Error(
-      { status: 501, statusText: "Not Implemented" })), 
-      0
-    );
-    // On Success return:
-    // resolve({data: getResponseObject});
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", url);
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300){
+        resolve({data: JSON.parse(xhr.responseText)});
+      }else{
+        reject({
+          status: xhr.status,
+          statusText: xhr.statusText
+        });
+      }
+    };
+    xhr.onerror = () => {
+      reject({
+        status: xhr.status,
+        statusText: "An error occurred during the AJAX request"
+      });
+    };
+    xhr.send();
   });
 }
 
