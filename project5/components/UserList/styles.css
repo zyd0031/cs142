@@ -1,0 +1,18 @@
+.nav-list{
+    background-color: aliceblue;
+    border-right: 2px solid cornsilk;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.list-item-buttom{
+    color:aquamarine;
+}
+
+.list-item-buttom:hover{
+    background-color: aqua;
+}
+
+.divider{
+    background-color:beige;
+}
