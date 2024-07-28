@@ -46,7 +46,7 @@ const SchemaInfo = require("./schema/schemaInfo.js");
 
 // XXX - Your submission should work without this line. Comment out or delete
 // this line for tests and before submission!
-const cs142models = require("./modelData/photoApp.js").cs142models;
+// const cs142models = require("./modelData/photoApp.js").cs142models;
 mongoose.set("strictQuery", false);
 mongoose.connect("mongodb://127.0.0.1/cs142project6", {
   useNewUrlParser: true,
@@ -143,7 +143,12 @@ app.get("/test/:p1", function (request, response) {
  * URL /user/list - Returns all the User objects.
  */
 app.get("/user/list", function (request, response) {
-  response.status(200).send(cs142models.userListModel());
+  User.find({}, "_id first_name last_name")
+    .then(users => response.json(users))
+    .catch(err =>{
+      console.error("Error fetching users", err);
+      response.status(500).send("Failed to fetch users");
+    });
 });
 
 /**
@@ -151,27 +156,68 @@ app.get("/user/list", function (request, response) {
  */
 app.get("/user/:id", function (request, response) {
   const id = request.params.id;
-  const user = cs142models.userModel(id);
-  if (user === null) {
-    console.log("User with _id:" + id + " not found.");
-    response.status(400).send("Not found");
-    return;
-  }
-  response.status(200).send(user);
+  User.findById(id, "_id first_name last_name location description occupation")
+    .then(user => {
+      if (!user){
+        console.log("User with _id:" + id + " not found.");
+        response.status(400).send("User not found");
+        return;
+      }
+      response.json(user);
+    })
+    .catch(err => {
+      console.error("Error fetching user details", err);
+      response.status(400).send("Failed to fetch user details");
+    });
 });
 
 /**
  * URL /photosOfUser/:id - Returns the Photos for User (id).
  */
 app.get("/photosOfUser/:id", function (request, response) {
-  const id = request.params.id;
-  const photos = cs142models.photoOfUserModel(id);
-  if (photos.length === 0) {
-    console.log("Photos for user with _id:" + id + " not found.");
-    response.status(400).send("Not found");
+  const userId = request.params.id;
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    response.status(400).send("Invalid user ID");
     return;
   }
-  response.status(200).send(photos);
+
+  Photo.find({user_id: userId}, "-__v")
+      .then(photos => {
+          if (photos.length === 0) {
+              console.log("Photos for user with _id:" + userId + " not found.");
+              response.status(404).send("Photos not found");
+              return;
+          }
+
+          const photosPromises = photos.map(photo => {
+              const commentsPromises = photo.comments.map(comment => {
+                  return User.findById(comment.user_id, '_id first_name last_name')
+                      .then(user => {
+                          const modifiedComment = { ...comment._doc, user: user };
+                          delete modifiedComment.user_id;
+                          return modifiedComment;
+                      })
+                      .catch(err => {
+                          console.error("Error fetching user for comment", err);
+                          throw new Error("Failed to fetch user for comment");
+                      });
+              });
+
+              return Promise.all(commentsPromises)
+                  .then(comments => {
+                      return {...photo._doc, comments: comments}; 
+                  });
+          });
+
+          return Promise.all(photosPromises);
+      })
+      .then(completePhotos => {
+          response.json(completePhotos);
+      })
+      .catch(err => {
+          console.error("Error processing photos", err);
+          response.status(500).send("Failed to process photos");
+      });
 });
 
 const server = app.listen(3000, function () {
