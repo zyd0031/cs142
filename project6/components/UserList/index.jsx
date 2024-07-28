@@ -8,7 +8,7 @@ import {
   ListItemButton
 } from "@mui/material";
 import {Link} from "react-router-dom"
-import fetchModel from "../../lib/fetchModelData";
+import axios from "axios";
 
 import "./styles.css";
 
@@ -19,7 +19,7 @@ function UserList(){
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    fetchModel("/user/list")
+    axios.get("/user/list")
       .then(response => {
         setUsers(response.data);
       })

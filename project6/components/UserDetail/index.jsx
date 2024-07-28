@@ -3,7 +3,7 @@ import {useParams} from "react-router-dom";
 import { Typography, Card, CardContent, Button} from "@mui/material";
 import {makeStyles} from "@mui/styles";
 import {Link} from "react-router-dom";
-import fetchModel from "../../lib/fetchModelData";
+import axios from "axios";
 
 const useStyles = makeStyles({
   card:{
@@ -28,7 +28,7 @@ function UserDetail(){
 
   useEffect(() => {
     const fetchUserData = () => {
-      fetchModel(`/user/${userId}`)
+      axios.get(`/user/${userId}`)
         .then(response => {
           setUser(response.data);
         })
@@ -36,10 +36,11 @@ function UserDetail(){
           console.error("failed to fetch user data:", error);
         });
     };
-    if (userId){
+    if (userId) {
       fetchUserData();
     }
   }, [userId]);
+  
 
   if (!user){
     return <div>Loading...</div>

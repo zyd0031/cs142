@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { Typography, Grid, Paper, Card, CardContent, CardMedia } from "@mui/material";
 import { format } from "date-fns";
 import { makeStyles } from "@mui/styles";
-import fetchModel from "../../lib/fetchModelData";
+import axios from "axios";
 
 
 const useStyles = makeStyles({
@@ -39,7 +39,7 @@ function UserPhotos() {
   useEffect(() => {
     const fetchPhotos = async() => {
       try{
-        const response = await fetchModel(`/photosOfUser/${userId}`);
+        const response = await axios.get(`/photosOfUser/${userId}`);
         setPhotos(response.data);
       }catch (error){
         console.error("Fail to fetch user photos: ", error);

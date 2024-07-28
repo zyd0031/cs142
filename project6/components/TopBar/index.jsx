@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import { AppBar, Toolbar, Typography } from "@mui/material";
 import { useLocation, useParams } from 'react-router-dom';
-import fetchModel from "../../lib/fetchModelData";
+import axios from "axios";
 
 import "./styles.css";
 
@@ -30,8 +30,8 @@ const TopBar = () => {
   const [rightSideText, setRightSideText]= useState("");
 
   useEffect(() => {
-    if (userId){
-      fetchModel(`/user/${userId}`)
+    if (userId) {
+      axios.get(`/user/${userId}`)
         .then(response => {
           setUser(response.data);
           setRightSideText(determineContext(location, response.data));
