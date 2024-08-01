@@ -47,7 +47,7 @@ const TopBar = ({user, onLogout}) => {
 
   const handleLogoutClick = async() => {
     try{
-      onLogout();
+      await onLogout();
       history.push("/login");
     }catch (error){
       console.error("Failed to logout: ", error);

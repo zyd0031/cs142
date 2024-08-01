@@ -17,11 +17,27 @@ const PhotoShare = () => {
     setLoggedInUser(user);
   };
 
-  const handleLogout = () => {
-    setLoggedInUser(null);
-    axios.post("/admin/logout").catch(error => {
-      console.error("failed to logout: ", error);
-    });
+  const handleLogout = async () => {
+    try{
+      const response = await fetch("/admin/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok){
+        const err = await response.text();
+        throw new Error(err);
+      }
+
+      const message = await response.text();
+      console.log(message);
+      setLoggedInUser(null);
+    } catch (error){
+      console.error("Failed to logout: ", error);
+    }
   };
 
 

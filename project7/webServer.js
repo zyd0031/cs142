@@ -145,14 +145,18 @@ app.get("/test/:p1", function (request, response) {
   }
 });
 
+function isAuthenticated(req, res, next){
+  if (req.session && req.session.user){
+    next();
+  }else {
+      res.status(401).send("Unauthorized: You need to login first!");
+  }
+}
+
 /**
  * URL /user/list - Returns all the User objects.
  */
-app.get("/user/list", function (request, response) {
-  // if (!request.session.user){
-  //   response.status(401).send("Please Login.");
-  //   return;
-  // }
+app.get("/user/list", isAuthenticated, function (request, response) {
 
   User.find({}, "_id first_name last_name")
     .then(users => response.json(users))
@@ -165,11 +169,7 @@ app.get("/user/list", function (request, response) {
 /**
  * URL /user/:id - Returns the information for User (id).
  */
-app.get("/user/:id", function (request, response) {
-  // if (!request.session.user){
-  //   response.status(401).send("Please Login.");
-  //   return;
-  // }
+app.get("/user/:id", isAuthenticated, function (request, response) {
 
   const id = request.params.id;
   User.findById(id, "_id first_name last_name location description occupation")
@@ -190,11 +190,7 @@ app.get("/user/:id", function (request, response) {
 /**
  * URL /photosOfUser/:id - Returns the Photos for User (id).
  */
-app.get("/photosOfUser/:id", function (request, response) {
-  // if (!request.session.user){
-  //   response.status(401).send("Please Login.");
-  //   return;
-  // }
+app.get("/photosOfUser/:id", isAuthenticated, function (request, response) {
   const userId = request.params.id;
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     response.status(400).send("Invalid user ID");
@@ -260,7 +256,7 @@ app.post("/admin/login", async (req, res) => {
   }
 });
 
-app.post("admin/logout", (req, res) => {
+app.post("/admin/logout", (req, res) => {
   if (!req.session.user){
     return res.status(400).send("No user is currently logged in");
   }
