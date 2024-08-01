@@ -149,6 +149,11 @@ app.get("/test/:p1", function (request, response) {
  * URL /user/list - Returns all the User objects.
  */
 app.get("/user/list", function (request, response) {
+  // if (!request.session.user){
+  //   response.status(401).send("Please Login.");
+  //   return;
+  // }
+
   User.find({}, "_id first_name last_name")
     .then(users => response.json(users))
     .catch(err =>{
@@ -161,6 +166,11 @@ app.get("/user/list", function (request, response) {
  * URL /user/:id - Returns the information for User (id).
  */
 app.get("/user/:id", function (request, response) {
+  // if (!request.session.user){
+  //   response.status(401).send("Please Login.");
+  //   return;
+  // }
+
   const id = request.params.id;
   User.findById(id, "_id first_name last_name location description occupation")
     .then(user => {
@@ -181,6 +191,10 @@ app.get("/user/:id", function (request, response) {
  * URL /photosOfUser/:id - Returns the Photos for User (id).
  */
 app.get("/photosOfUser/:id", function (request, response) {
+  // if (!request.session.user){
+  //   response.status(401).send("Please Login.");
+  //   return;
+  // }
   const userId = request.params.id;
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     response.status(400).send("Invalid user ID");
@@ -225,6 +239,72 @@ app.get("/photosOfUser/:id", function (request, response) {
           response.status(500).send("Failed to process photos");
       });
 });
+
+app.post("/admin/login", async (req, res) => {
+  const {login_name, password} = req.body;
+  try{
+    const user = await User.findOne({login_name: login_name});
+    if (!user){
+      return res.status(400).json({message: "Invalid login name"});
+    }
+
+    if (user.password !== password){
+      return res.status(400).json({message: "Invalid Password"});
+    }
+
+    req.session.user = user;
+    res.send({_id: user._id, first_name: user.first_name});
+  } catch (err){
+    console.error("login error: ", err);
+    res.status(500).json({message: "Internal server error"});
+  }
+});
+
+app.post("admin/logout", (req, res) => {
+  if (!req.session.user){
+    return res.status(400).send("No user is currently logged in");
+  }
+  req.session.destroy((err) => {
+    if (err){
+      return res.status(500).send("Internal server error");
+    }
+    res.status(200).send("Logout successfully");
+  });
+});
+
+/**
+ * URL /user - Allows a user to register. T
+ */
+app.post("/user", async (req, res) => {
+  const {login_name, password, first_name, last_name, location, description, occupation} = req.body;
+  if (!login_name || !password || !first_name || !last_name){
+    return res.status(400).json({message: "Required field missing"});
+  }
+
+  try{
+    const existingUser = await User.findOne({login_name});
+    if (existingUser){
+      return res.status(400).send({message: "Login name already exists"});
+    }
+
+    const newUser = new User({
+      login_name,
+      password,
+      first_name,
+      last_name,
+      location,
+      description,
+      occupation
+    });
+
+    await newUser.save();
+    res.send({login_name: newUser.login_name});
+  } catch (err){
+    res.status(500).send({message: "Internal server error"});
+  }
+});
+
+
 
 const server = app.listen(3000, function () {
   const port = server.address().port;

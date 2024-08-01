@@ -1,53 +1,89 @@
-import React from "react";
+import React, {useState, useEffect} from "react";
 import ReactDOM from "react-dom";
 import { Grid, Typography, Paper } from "@mui/material";
-import { HashRouter, Route, Switch } from "react-router-dom";
+import {Route, Switch, Redirect, BrowserRouter as Router} from "react-router-dom";
 
 import "./styles/main.css";
 import TopBar from "./components/TopBar";
 import UserDetail from "./components/UserDetail";
 import UserList from "./components/UserList";
 import UserPhotos from "./components/UserPhotos";
+import LoginRegister from "./components/LoginRegister";
 
-class PhotoShare extends React.Component {
-  constructor(props) {
-    super(props);
-  }
+const PhotoShare = () => {
+  const [loggedInUser, setLoggedInUser] = useState(null);
 
-  render() {
-    return (
-      <HashRouter>
-        <div>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TopBar />
-            </Grid>
-            <div className="cs142-main-topbar-buffer" />
-            <Grid item sm={3}>
-              <Paper className="cs142-main-grid-item">
-                <UserList />
-              </Paper>
-            </Grid>
-            <Grid item sm={9}>
-              <Paper className="cs142-main-grid-item">
-                <Switch>
-                  <Route
-                    path="/users/:userId"
-                    render={(props) => <UserDetail {...props} />}
-                  />
-                  <Route
-                    path="/photos/:userId"
-                    render={(props) => <UserPhotos {...props} />}
-                  />
-                  <Route path="/users" component={UserList} />
-                </Switch>
-              </Paper>
-            </Grid>
+  const handleLogin = (user) => {
+    setLoggedInUser(user);
+  };
+
+  const handleLogout = () => {
+    setLoggedInUser(null);
+    axios.post("/admin/logout").catch(error => {
+      console.error("failed to logout: ", error);
+    });
+  };
+
+
+  return (
+    <Router>
+      <div>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <TopBar user={loggedInUser} onLogout={handleLogout} />
           </Grid>
-        </div>
-      </HashRouter>
-    );
-  }
-}
+          <div className="cs142-main-topbar-buffer"></div>
+          <Grid item sm={3}>
+            <Paper className="cs142-main-grid-item">
+              {loggedInUser && <UserList />}
+            </Paper>
+          </Grid>
+          <Grid item sm={9}>
+            <Paper className="cs142-main-grid-item">
+              <Switch>
+                <Route
+                  path="/login"
+                  render={(props) => (
+                    loggedInUser ? <Redirect to="/" /> : <LoginRegister onLogin={handleLogin} />
+                  )}
+                />
+                <Route
+                  path="/users/:userId"
+                  render={(props) => (
+                    loggedInUser ? <UserDetail {...props} /> : <Redirect to="/login" />
+                  )}
+                />
+                <Route
+                  path="/photos/:userId"
+                  render={(props) => (
+                    loggedInUser ? <UserPhotos {...props} /> : <Redirect to="/login" />
+                  )}
+                />
+                <Route
+                  path="/users"
+                  render={(props) => (
+                    loggedInUser ? <UserList {...props} /> : <Redirect to="/login" />
+                  )}
+                />
+                <Route
+                  path="/"
+                  render={() => (
+                    loggedInUser ? (
+                      <Typography variant="h6">Welcome to the PhotoShare App</Typography>
+                    ) : (
+                      <Redirect to="/login" />
+                    )
+                  )}
+                />
+              </Switch>
+            </Paper>
+          </Grid>
+        </Grid>
+      </div>
+    </Router>
+  );
 
-ReactDOM.render(<PhotoShare />, document.getElementById("photoshareapp"));
+};
+
+ReactDOM.render(<PhotoShare/>, 
+  document.getElementById('photoshareapp'));
