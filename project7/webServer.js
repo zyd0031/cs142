@@ -236,6 +236,9 @@ app.get("/photosOfUser/:id", isAuthenticated, function (request, response) {
       });
 });
 
+/**
+ * URL - /admin/login - Provides a way for the photo app's LoginRegister view to login in a user.
+ */
 app.post("/admin/login", async (req, res) => {
   const {login_name, password} = req.body;
   try{
@@ -256,6 +259,9 @@ app.post("/admin/login", async (req, res) => {
   }
 });
 
+/**
+ * URL - /admin/logout - A POST request with an empty body to this URL will logout the user by clearing the information stored in the session.
+ */
 app.post("/admin/logout", (req, res) => {
   if (!req.session.user){
     return res.status(400).send("No user is currently logged in");
@@ -297,6 +303,40 @@ app.post("/user", async (req, res) => {
     res.send({login_name: newUser.login_name});
   } catch (err){
     res.status(500).send({message: "Internal server error"});
+  }
+});
+
+/**
+ * URL - /commentsOfPhoto/:photo_id - Add a comment to the photo whose id is photo_id
+ */
+app.post("/commentsOfPhoto/:photo_id", isAuthenticated, async (req, res) => {
+  const photoId = req.params.photo_id;
+  const {comment} = req.body;
+
+  if (!comment || comment.trim() === ""){
+    return res.status(400).send("Bad request: Comment cannot be empty");
+  }
+
+  try{
+    const photo = await Photo.findById(photoId);
+    if (!photo){
+      return res.status(404).send("Photo not found");
+    }
+
+    const userId = req.session.user._id;
+
+    const newComment = {
+      comment,
+      date_time: new Date(),
+      user_id: userId
+    };
+
+    photo.comments.push(newComment);
+    await photo.save();
+
+    res.status(200).send(photo);
+  } catch (error){
+    res.status(500).send("Internal server error");
   }
 });
 

@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Typography, Grid, Paper, Card, CardContent, CardMedia } from "@mui/material";
+import { Typography, Grid, Paper, Card, CardContent, CardMedia, TextField, Button } from "@mui/material";
 import { format } from "date-fns";
 import { makeStyles } from "@mui/styles";
 import axios from "axios";
-
 
 const useStyles = makeStyles({
   root: {
@@ -34,22 +33,52 @@ const useStyles = makeStyles({
 function UserPhotos() {
   const classes = useStyles();
   const { userId } = useParams();
+  const [newComments, setNewComments] = useState({});
   const [photos, setPhotos] = useState([]);
 
+  const fetchPhotos = async() => {
+    try{
+      const response = await axios.get(`/photosOfUser/${userId}`);
+      setPhotos(response.data);
+    }catch (error){
+      console.error("Fail to fetch user photos: ", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchPhotos = async() => {
-      try{
-        const response = await axios.get(`/photosOfUser/${userId}`);
-        setPhotos(response.data);
-      }catch (error){
-        console.error("Fail to fetch user photos: ", error);
-      }
-    };
     if (userId){
       fetchPhotos();
     }
   }, [userId]);
 
+  const handleCommentChange = (photoId, comment) => {
+    setNewComments(prevComments => ({
+      ...prevComments,
+      [photoId]: comment
+    }));
+  };
+
+  const handleCommentSubmit = async (photoId) => {
+    const comment = newComments[photoId];
+    if (!comment || comment.trim() === ""){
+      return;
+    }
+    try{
+      const response = await axios.post(`/commentsOfPhoto/${photoId}`, {comment});
+      setNewComments(prevComments => ({
+        ...prevComments,
+        [photoId]: ""
+      }));
+      fetchPhotos();
+    }catch(error){
+      console.error("Failed to add comment: ", error);
+    }
+  }
+
+
+
+
+  
   return (
     <Grid container spacing={2} className={classes.root}>
       {photos.map((photo) => (
@@ -80,6 +109,20 @@ function UserPhotos() {
                   </Typography>
                 </Paper>
               ))}
+              <TextField
+                label="Add a comment"
+                value={newComments[photo._id] || ""}
+                onChange={(e) => handleCommentChange(photo._id, e.target.value)}
+                fullWidth
+                multiline
+              />
+              <Button
+                onClick={() => handleCommentSubmit(photo._id)}
+                color="primary"
+                variant="contained"
+              >
+                Submit
+              </Button>
             </CardContent>
           </Card>
         </Grid>
