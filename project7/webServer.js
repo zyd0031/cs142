@@ -33,6 +33,8 @@
 const session = require("express-session");
 const bodyParser = require("body-parser");
 const multer = require("multer");
+const processFormBody = multer({ storage: multer.memoryStorage() }).single('uploadedphoto');
+const fs = require("fs");
 
 const mongoose = require("mongoose");
 mongoose.Promise = require("bluebird");
@@ -338,6 +340,42 @@ app.post("/commentsOfPhoto/:photo_id", isAuthenticated, async (req, res) => {
   } catch (error){
     res.status(500).send("Internal server error");
   }
+});
+
+/**
+ * URL - /photos/new - Upload a photo for the current user. 
+ */
+app.post("/photos/new", isAuthenticated, (request, response) => {
+  processFormBody(request, response, function (err) {
+    if (err || !request.file) {
+      return response.status(400).send("No file uploaded");
+    }
+
+    const timestamp = new Date().valueOf();
+    const filename = 'U' + String(timestamp) + request.file.originalname;
+
+    fs.writeFile("./images/" + filename, request.file.buffer, async function (err) {
+      if (err) {
+        return response.status(500).send("Failed to save photo");
+      }
+
+      try {
+        const userId = request.session.user._id;
+        const newPhoto = new Photo({
+          file_name: filename,
+          date_time: new Date(),
+          user_id: userId,
+          comments: []
+        });
+
+        await newPhoto.save();
+        response.status(200).send(newPhoto);
+      } catch (err) {
+        console.error("Error uploading photo", err);
+        response.status(500).send("Internal server error");
+      }
+    });
+  });
 });
 
 

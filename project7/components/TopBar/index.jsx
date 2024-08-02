@@ -1,8 +1,8 @@
-import React, {useEffect, useState} from "react";
-import { AppBar, Toolbar, Typography, Button} from "@mui/material";
+import React, { useEffect, useState, useRef } from "react";
+import { AppBar, Toolbar, Typography, Button, Box } from "@mui/material";
 import { useLocation, Link } from 'react-router-dom';
 import axios from "axios";
-import {useHistory} from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import "./styles.css";
 
 /**
@@ -15,20 +15,20 @@ const determineContext = (location, user) => {
 
   userName = user ? `${user.first_name} ${user.last_name}` : " ";
 
-  if (path.includes("/photos/")){
-    return `Photos of ${userName}`
-  }else{
+  if (path.includes("/photos/")) {
+    return `Photos of ${userName}`;
+  } else {
     return userName;
   }
-
 }
 
-const TopBar = ({user, onLogout}) => {
+const TopBar = ({ user, onLogout }) => {
   const location = useLocation();
   const userId = location.pathname.split('/')[2];
-  const [rightSideText, setRightSideText]= useState("");
+  const [rightSideText, setRightSideText] = useState("");
   const [displayedUser, setDisplayedUser] = useState(null);
   const history = useHistory();
+  const uploadInput = useRef(null); // Create a ref for the file input
 
   useEffect(() => {
     if (userId) {
@@ -45,12 +45,30 @@ const TopBar = ({user, onLogout}) => {
     }
   }, [userId, location]);
 
-  const handleLogoutClick = async() => {
-    try{
+  const handleLogoutClick = async () => {
+    try {
       await onLogout();
       history.push("/login");
-    }catch (error){
+    } catch (error) {
       console.error("Failed to logout: ", error);
+    }
+  };
+
+  const handleUploadButtonClicked = (e) => {
+    e.preventDefault();
+    if (uploadInput.current.files.length > 0) {
+      const domForm = new FormData();
+      domForm.append('uploadedphoto', uploadInput.current.files[0]);
+      axios.post('/photos/new', domForm)
+        .then((res) => {
+          console.log(res);
+          alert('Photo uploaded successfully!');
+          history.push(`/photos/${user._id}`);
+        })
+        .catch(err => {
+          console.log(`POST ERR: ${err}`);
+          alert('Failed to upload photo.');
+        });
     }
   };
 
@@ -59,17 +77,43 @@ const TopBar = ({user, onLogout}) => {
       <Toolbar>
         {user ? (
           <>
-            <Typography variant="h5" color="inherit">
-              My Name~~
-            </Typography>
-            <Typography variant="h5">
-              {rightSideText}
-            </Typography>
-            <Typography variant="h6">
-              Hi {user.first_name}
-            </Typography>
+            <Box mb={2}>
+              <Typography variant="h5" color="inherit">
+                My Name~~
+              </Typography>
+            </Box>
+            <Box mb={2}>
+              <Typography variant="h5">
+                {rightSideText}
+              </Typography>
+            </Box>
+            <Box mb={2}>
+              <Typography variant="h5">
+                Hi {user.first_name}
+              </Typography>
+            </Box>
             <div style={{ flexGrow: 1 }}></div>
-            <Button color="inherit" onClick={handleLogoutClick} style={{ border: '1px solid white' }}>Logout</Button>
+            <input
+              type="file"
+              accept="image/*"
+              ref={uploadInput}
+              style={{ display: 'none' }}
+              onChange={handleUploadButtonClicked}
+            />
+            <Button
+              color="inherit"
+              onClick={() => uploadInput.current.click()} 
+              style={{ border: '1px solid white', marginRight: '10px' }}
+            >
+              Upload
+            </Button>
+            <Button
+              color="inherit"
+              onClick={handleLogoutClick}
+              style={{ border: '1px solid white' }}
+            >
+              Logout
+            </Button>
           </>
         ) : (
           <Link to="/login" style={{ textDecoration: "none", color: "inherit" }}>
@@ -82,6 +126,5 @@ const TopBar = ({user, onLogout}) => {
     </AppBar>
   );
 }
-
 
 export default TopBar;
