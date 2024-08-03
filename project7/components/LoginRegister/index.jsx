@@ -30,7 +30,7 @@ const LoginRegister = ({onLogin}) => {
     const handleLogin = async(e) => {
         e.preventDefault();
         try {
-            const response = await fetch("admin/login", {
+            const response = await fetch("/admin/login", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({login_name: loginName, password})

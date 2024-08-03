@@ -52,6 +52,8 @@ const User = require("./schema/user.js");
 const Photo = require("./schema/photo.js");
 const SchemaInfo = require("./schema/schemaInfo.js");
 
+const cs142password = require("./cs142password");
+
 // XXX - Your submission should work without this line. Comment out or delete
 // this line for tests and before submission!
 // const cs142models = require("./modelData/photoApp.js").cs142models;
@@ -238,6 +240,7 @@ app.get("/photosOfUser/:id", isAuthenticated, function (request, response) {
       });
 });
 
+const crypto = require("crypto");
 /**
  * URL - /admin/login - Provides a way for the photo app's LoginRegister view to login in a user.
  */
@@ -248,9 +251,13 @@ app.post("/admin/login", async (req, res) => {
     if (!user){
       return res.status(400).json({message: "Invalid login name"});
     }
+    // console.log("typed password: ", password);
+    // console.log("user.password: ", user.password_digest);
+    // const hash = crypto.createHash("sha1").update(user.salt + password).digest("hex");
+    // console.log("calculated password: ", hash);
 
-    if (user.password !== password){
-      return res.status(400).json({message: "Invalid Password"});
+    if (!cs142password.doesPasswordMatch(user.password_digest, user.salt, password)) {
+      return res.status(400).json({ message: "Invalid Password" });
     }
 
     req.session.user = user;
@@ -291,9 +298,12 @@ app.post("/user", async (req, res) => {
       return res.status(400).send({message: "Login name already exists"});
     }
 
+    const { salt, password_digest } = cs142password.makePasswordEntry(password);
+
     const newUser = new User({
       login_name,
-      password,
+      salt,         
+      password_digest,         
       first_name,
       last_name,
       location,
@@ -304,6 +314,7 @@ app.post("/user", async (req, res) => {
     await newUser.save();
     res.send({login_name: newUser.login_name});
   } catch (err){
+    console.log(err);
     res.status(500).send({message: "Internal server error"});
   }
 });
