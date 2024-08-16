@@ -401,6 +401,26 @@ app.get("/user/:id/mostRecentPhoto", isAuthenticated, function(req, res){
     })
 });
 
+/**
+ * get the most commented photo of a user
+ */
+app.get("/user/:id/mostCommentedPhoto", isAuthenticated, function(req, res){
+  const userId = req.params.id;
+
+  Photo.find({user_id: userId})
+    .sort({"comments.length": -1})
+    .limit(1)
+    .then(photos =>{
+      if (photos.length === 0){
+        return res.json({});
+      }
+      res.json(photos[0]);
+    })
+    .catch(err => {
+      console.error("Error fetching most commented photo: ", err);
+      res.status(500).send("Internal server error");
+    });
+});
 
 
 const server = app.listen(3000, function () {

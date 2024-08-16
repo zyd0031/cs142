@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {useParams} from "react-router-dom";
-import { Typography, Card, CardContent, Button, CardMedia} from "@mui/material";
+import { Typography, Card, CardContent, Button, CardMedia, Box} from "@mui/material";
 import {makeStyles} from "@mui/styles";
 import {Link} from "react-router-dom";
 import axios from "axios";
@@ -27,6 +27,7 @@ function UserDetail(){
   const {userId} = useParams();
   const [user, setUser] = useState(null);
   const [mostRecentPhoto, setMostRecentPhoto] = useState(null);
+  const [mostCommentedPhoto, setMostCommentedPhoto] = useState(null);
 
   useEffect(() => {
     const fetchUserData = () => {
@@ -52,8 +53,22 @@ function UserDetail(){
       }
     };
 
+    const fetchMostCommentedPhoto = async() => {
+      try{
+        const res = await axios.get(`/user/${userId}/mostCommentedPhoto`);
+        if (res.data && res.data._id){
+          setMostCommentedPhoto(res.data);
+        }else{
+          setMostCommentedPhoto(null);
+        }
+      } catch (error){
+        console.error("Failed to fetch most commented photo: ", error);
+      }
+    };
+
     fetchUserData();
     fetchMostRecentPhoto();
+    fetchMostCommentedPhoto();
   }, [userId]);
   
 
@@ -79,7 +94,7 @@ function UserDetail(){
         {
           mostRecentPhoto && (
             <>
-              <Typography variant="body2">
+              <Typography variant="body2" className={classes.info}>
                 Most Recent Photo:
               </Typography>
               <Link to={`/photos/${userId}`}>
@@ -87,6 +102,22 @@ function UserDetail(){
               </Link>
               <Typography variant="body2">
                 Uploaded on {format(new Date(mostRecentPhoto.date_time), "PPPpp")}
+              </Typography>
+            </>
+          )
+        }
+        <Box mt={4} />
+        {
+          mostCommentedPhoto && (
+            <>
+              <Typography variant="body2" className={classes.info}>
+                Most Commented Photo:
+              </Typography>
+              <Link to={`/photos/${userId}`}>
+                <CardMedia component="img" image={`../../images/${mostCommentedPhoto.file_name}`} alt="most Commented Photo" style={{width: "50%", height: "50%"}}/>
+              </Link>
+              <Typography variant="body2">
+                #Comments: {mostCommentedPhoto.comments.length}
               </Typography>
             </>
           )

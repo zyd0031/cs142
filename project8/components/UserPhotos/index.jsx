@@ -86,7 +86,6 @@ function UserPhotos() {
           <Card className={classes.card}>
             <CardMedia
               component="img"
-              height="200"
               image={`../../images/${photo.file_name}`}  
               alt={`Photo by ${photo.user_id}`}
               className={classes.media}
