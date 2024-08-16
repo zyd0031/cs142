@@ -17,6 +17,9 @@ const userSchema = new mongoose.Schema({
   salt: { type: String, required: true }
 });
 
+userSchema.virtual("display_name").get(function(){
+  return `${this.first_name} ${this.last_name}`;
+});
 
 /**
  * Create a Mongoose Model for a User using the userSchema.

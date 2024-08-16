@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Typography, Grid, Paper, Card, CardContent, CardMedia, TextField, Button } from "@mui/material";
+import { Typography, Grid, Paper, Card, CardContent, CardMedia, Button } from "@mui/material";
 import { format } from "date-fns";
 import { makeStyles } from "@mui/styles";
 import axios from "axios";
+import { MentionsInput, Mention } from "react-mentions";
+import { useHistory } from "react-router-dom";
 
 const useStyles = makeStyles({
   root: {
@@ -27,6 +29,21 @@ const useStyles = makeStyles({
     padding: '8px',  
     borderRadius: '4px',  
     margin: '8px 0'
+  },
+  mentionsInput: {
+    width: '100%',
+    minHeight: '60px',
+    border: '1px solid #ccc',
+    padding: '8px',
+    borderRadius: '4px'
+  },
+  mentionLink: {
+    color: "#3f51b5",
+    textDecoration: "none",
+    cursor: "pointer",
+    "&:hover": {
+      textDecoration: "underline"
+    }
   }
 });
 
@@ -35,6 +52,8 @@ function UserPhotos() {
   const { userId } = useParams();
   const [newComments, setNewComments] = useState({});
   const [photos, setPhotos] = useState([]);
+  const [users, setUsers] = useState([]);
+  const history = useHistory();
 
   const fetchPhotos = async() => {
     try{
@@ -45,11 +64,23 @@ function UserPhotos() {
     }
   };
 
-  useEffect(() => {
-    if (userId){
-      fetchPhotos();
+  const fetchUsers = async() =>{
+    try{
+      const response = await axios.get("/user/list");
+      const userList = response.data.map(user => ({
+        id: user._id,
+        display: `${user.first_name} ${user.last_name}`
+      }));
+      setUsers(userList);
+    } catch (error){
+      console.error("Error fetching userlist:", error);
     }
-  }, [userId]);
+  };
+
+  useEffect(() => {
+    fetchPhotos();
+    fetchUsers();
+  }, []);
 
   const handleCommentChange = (photoId, comment) => {
     setNewComments(prevComments => ({
@@ -64,7 +95,7 @@ function UserPhotos() {
       return;
     }
     try{
-      const response = await axios.post(`/commentsOfPhoto/${photoId}`, {comment});
+      await axios.post(`/commentsOfPhoto/${photoId}`, {comment});
       setNewComments(prevComments => ({
         ...prevComments,
         [photoId]: ""
@@ -73,12 +104,26 @@ function UserPhotos() {
     }catch(error){
       console.error("Failed to add comment: ", error);
     }
-  }
+  };
 
+  const renderCommentWithMentions = (commentText) => {
+    const mentionPattern = /@(\w+\s\w+)/g;
+    const parts = commentText.split(mentionPattern);
 
+    return parts.map((part, index) => {
+      const user = users.find(user => `${user.display}` === part);
+      if (user) {
+        return (
+          <Link key={index} to={`/users/${user.id}`} className={classes.mentionLink}>
+            @{user.display}
+          </Link>
+        );
+      } else {
+        return part;
+      }
+    });
+  };
 
-
-  
   return (
     <Grid container spacing={2} className={classes.root}>
       {photos.map((photo) => (
@@ -104,17 +149,22 @@ function UserPhotos() {
                     {comment.date_time ? format(new Date(comment.date_time), "PPPpp") : 'Date unknown'}
                   </Typography>
                   <Typography variant="body1">
-                    {comment.comment}
+                    {renderCommentWithMentions(comment.comment)}
                   </Typography>
                 </Paper>
               ))}
-              <TextField
-                label="Add a comment"
-                value={newComments[photo._id] || ""}
-                onChange={(e) => handleCommentChange(photo._id, e.target.value)}
-                fullWidth
-                multiline
-              />
+              <MentionsInput 
+                value={newComments[photo._id] || ""} 
+                onChange={(e) => handleCommentChange(photo._id, e.target.value)} 
+                className={classes.mentionsInput} 
+                placeholder="Add a comment...">
+                  <Mention 
+                    trigger="@" 
+                    data={users}  
+                    displayTransform={(id, display) => `@${display}`}
+                    markup="@__display__"
+                  />
+              </MentionsInput>
               <Button
                 onClick={() => handleCommentSubmit(photo._id)}
                 color="primary"
@@ -131,3 +181,4 @@ function UserPhotos() {
 }
 
 export default UserPhotos;
+

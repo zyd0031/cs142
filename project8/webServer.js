@@ -329,10 +329,23 @@ app.post("/commentsOfPhoto/:photo_id", isAuthenticated, async (req, res) => {
 
     const userId = req.session.user._id;
 
+    const mentionPattern = /@(\w+\s\w+)/g;
+    const mentionedUsers = [];
+    let match;
+    while ((match = mentionPattern.exec(comment)) !== null) {
+      const fullName = match[1];
+      const [first_name, last_name] = fullName.split(" ");
+      const mentionedUser = await User.findOne({ first_name, last_name });
+      if (mentionedUser) {
+        mentionedUsers.push(mentionedUser._id);
+      }
+    }
+
     const newComment = {
       comment,
       date_time: new Date(),
-      user_id: userId
+      user_id: userId,
+      mentions: mentionedUsers  
     };
 
     photo.comments.push(newComment);
