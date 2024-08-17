@@ -16,6 +16,10 @@ const useStyles = makeStyles({
   },
   link: {
     textDecorationLine: "none"
+  },
+  image: {
+    width: "50%",
+    height: "50%"
   }
 });
 
@@ -28,6 +32,7 @@ function UserDetail(){
   const [user, setUser] = useState(null);
   const [mostRecentPhoto, setMostRecentPhoto] = useState(null);
   const [mostCommentedPhoto, setMostCommentedPhoto] = useState(null);
+  const [mentionedPhotos, setMentionedPhotos] = useState([]);
 
   useEffect(() => {
     const fetchUserData = () => {
@@ -66,9 +71,23 @@ function UserDetail(){
       }
     };
 
+    const fetchMentionedPhotos = async() => {
+      try{
+        const response = await axios.get(`/photos/mention/${userId}`);
+        if (response.data && response.data.length > 0){
+          setMentionedPhotos(response.data);
+        }else{
+          setMentionedPhotos([]);
+        } 
+      } catch (error){
+        console.error("Failed to fetch mentioned photos: ", error);
+      }
+    };
+
     fetchUserData();
     fetchMostRecentPhoto();
     fetchMostCommentedPhoto();
+    fetchMentionedPhotos();
   }, [userId]);
   
 
@@ -94,11 +113,11 @@ function UserDetail(){
         {
           mostRecentPhoto && (
             <>
-              <Typography variant="body2" className={classes.info}>
+              <Typography variant="h6" className={classes.info}>
                 Most Recent Photo:
               </Typography>
               <Link to={`/photos/${userId}`}>
-                <CardMedia component="img" image={`../../images/${mostRecentPhoto.file_name}`} alt="Most Recent Photo" style={{width: "50%", height: "50%"}}/>
+                <CardMedia component="img" image={`../../images/${mostRecentPhoto.file_name}`} alt="Most Recent Photo" className={classes.image}/>
               </Link>
               <Typography variant="body2">
                 Uploaded on {format(new Date(mostRecentPhoto.date_time), "PPPpp")}
@@ -110,11 +129,11 @@ function UserDetail(){
         {
           mostCommentedPhoto && (
             <>
-              <Typography variant="body2" className={classes.info}>
+              <Typography variant="h6" className={classes.info}>
                 Most Commented Photo:
               </Typography>
               <Link to={`/photos/${userId}`}>
-                <CardMedia component="img" image={`../../images/${mostCommentedPhoto.file_name}`} alt="most Commented Photo" style={{width: "50%", height: "50%"}}/>
+                <CardMedia component="img" image={`../../images/${mostCommentedPhoto.file_name}`} alt="most Commented Photo" className={classes.image} />
               </Link>
               <Typography variant="body2">
                 #Comments: {mostCommentedPhoto.comments.length}
@@ -122,6 +141,40 @@ function UserDetail(){
             </>
           )
         }
+        <Box mt={4} />
+        {
+          mentionedPhotos.length > 0 ? (
+            <>
+              <Typography variant="h6">Be Mentioned</Typography>
+              {mentionedPhotos.map((photo) => (
+                <Card key={photo._id}>  
+                  <Link to={`/photos/${photo.user_id._id}`}>
+                    <CardMedia
+                      component="img"
+                      image={`../../images/${photo.file_name}`}
+                      alt={`Photo by ${photo.user_id.first_name}`}
+                      className={classes.image}
+                    />
+                  </Link>
+                  <CardContent>
+                    <Typography variant="body2">
+                      Photo by:&nbsp;
+                      <Link to={`/users/${photo.user_id._id}`}>
+                        {`${photo.user_id.first_name} ${photo.user_id.last_name}`}
+                      </Link>
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          ) : (
+            <Typography variant="body1">
+              Not mentioned.
+            </Typography>
+          )
+        }
+
+
         <Button component={Link} to={`/photos/${userId}`} className={classes.link}>
           View Photos
         </Button>

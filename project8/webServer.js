@@ -435,6 +435,26 @@ app.get("/user/:id/mostCommentedPhoto", isAuthenticated, function(req, res){
     });
 });
 
+/**
+ * get the photos that the user was mentioned
+ */
+app.get("/photos/mention/:userId", isAuthenticated, async (req, res) => {
+  const userId = req.params.userId;
+
+  try{
+    const photos = await Photo.find({"comments.mentions": userId})
+                            .populate("user_id", "first_name last_name")  
+                            .exec();
+    if (!photos.length){
+      return res.status(200).json([]);
+    }
+    res.status(200).json(photos);
+  } catch(error){
+    console.error("Error fetching photos that a user was mentioned", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
 
 const server = app.listen(3000, function () {
   const port = server.address().port;

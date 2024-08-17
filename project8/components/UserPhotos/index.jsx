@@ -80,7 +80,7 @@ function UserPhotos() {
   useEffect(() => {
     fetchPhotos();
     fetchUsers();
-  }, []);
+  }, [userId]);
 
   const handleCommentChange = (photoId, comment) => {
     setNewComments(prevComments => ({
