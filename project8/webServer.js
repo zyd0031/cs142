@@ -199,6 +199,7 @@ app.get("/photosOfUser/:id", isAuthenticated, function (request, response) {
   const currentUserId = request.session.user._id;
 
   Photo.find({user_id: userId, shared_with: currentUserId}, "-__v")
+      .populate("shared_with", "_id first_name last_name")
       .then(photos => {
           if (photos.length === 0) {
               console.log("Photos for user with _id:" + userId + " not found.");

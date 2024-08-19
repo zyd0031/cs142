@@ -160,7 +160,7 @@ function UserPhotos() {
                 placeholder="Add a comment...">
                   <Mention 
                     trigger="@" 
-                    data={users}  
+                    data={photo.shared_with.map(user => ({id: user._id, display: `${user.first_name} ${user.last_name}`}))}  
                     displayTransform={(id, display) => `@${display}`}
                     markup="@__display__"
                   />
