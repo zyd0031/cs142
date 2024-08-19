@@ -9,6 +9,8 @@ import UserDetail from "./components/UserDetail";
 import UserList from "./components/UserList";
 import UserPhotos from "./components/UserPhotos";
 import LoginRegister from "./components/LoginRegister";
+import PhotoUpload from "./components/PhotoUpload";
+
 
 const PhotoShare = () => {
   const [loggedInUser, setLoggedInUser] = useState(null);
@@ -31,14 +33,12 @@ const PhotoShare = () => {
         const err = await response.text();
         throw new Error(err);
       }
-
-      // const message = await response.text();
-      // console.log(message);
       setLoggedInUser(null);
     } catch (error){
       console.error("Failed to logout: ", error);
     }
   };
+
 
 
   return (
@@ -72,13 +72,19 @@ const PhotoShare = () => {
                 <Route
                   path="/photos/:userId"
                   render={(props) => (
-                    loggedInUser ? <UserPhotos {...props} /> : <Redirect to="/login" />
+                    loggedInUser ? <UserPhotos {...props} user={loggedInUser} /> : <Redirect to="/login" />
                   )}
                 />
                 <Route
                   path="/users"
                   render={(props) => (
                     loggedInUser ? <UserList {...props} /> : <Redirect to="/login" />
+                  )}
+                />
+                <Route 
+                  path="/upload"
+                  render={(props) => (
+                    loggedInUser ? <PhotoUpload user={loggedInUser} /> : <Redirect to="/login" />
                   )}
                 />
                 <Route
@@ -91,6 +97,7 @@ const PhotoShare = () => {
                     )
                   )}
                 />
+
               </Switch>
             </Paper>
           </Grid>

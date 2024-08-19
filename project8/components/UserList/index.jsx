@@ -34,7 +34,7 @@ function UserList(){
         <React.Fragment key={user._id}>
           <ListItem component={Link} to={`/users/${user._id}`}>
             <ListItemButton className="list-item-button">
-              <ListItemText primary={`${user.first_name} ${user.last_name}`}/>
+              <ListItemText primary={`${user.full_name}`}/>
             </ListItemButton>
           </ListItem>
           <Divider className="divider"/>

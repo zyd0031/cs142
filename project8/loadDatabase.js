@@ -82,6 +82,7 @@ Promise.all(removePromises)
       // in the User object.
       const photoModels = [];
       const userIDs = Object.keys(mapFakeId2RealId);
+      const realUserIDs = Object.values(mapFakeId2RealId);
       userIDs.forEach(function (id) {
         photoModels.push(...cs142models.photoOfUserModel(id));
       });
@@ -91,6 +92,7 @@ Promise.all(removePromises)
           file_name: photo.file_name,
           date_time: photo.date_time,
           user_id: mapFakeId2RealId[photo.user_id],
+          shared_with: realUserIDs
         })
           .then(function (photoObj) {
             photo.objectID = photoObj._id;

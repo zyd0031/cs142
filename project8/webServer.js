@@ -196,8 +196,9 @@ app.get("/user/:id", isAuthenticated, function (request, response) {
  */
 app.get("/photosOfUser/:id", isAuthenticated, function (request, response) {
   const userId = request.params.id;
+  const currentUserId = request.session.user._id;
 
-  Photo.find({user_id: userId}, "-__v")
+  Photo.find({user_id: userId, shared_with: currentUserId}, "-__v")
       .then(photos => {
           if (photos.length === 0) {
               console.log("Photos for user with _id:" + userId + " not found.");
@@ -376,11 +377,13 @@ app.post("/photos/new", isAuthenticated, (request, response) => {
 
       try {
         const userId = request.session.user._id;
+        const sharedWith = JSON.parse(request.body.share_with) || [];
         const newPhoto = new Photo({
           file_name: filename,
           date_time: new Date(),
           user_id: userId,
-          comments: []
+          comments: [],
+          shared_with: sharedWith
         });
 
         await newPhoto.save();
@@ -398,8 +401,9 @@ app.post("/photos/new", isAuthenticated, (request, response) => {
  */
 app.get("/user/:id/mostRecentPhoto", isAuthenticated, function(req, res){
   const userId = req.params.id;
+  const currentUserId = req.session.user._id;
 
-  Photo.find({user_id: userId})
+  Photo.find({user_id: userId, shared_with: currentUserId})
     .sort({date_time: -1})
     .limit(1)
     .then(photos =>{
