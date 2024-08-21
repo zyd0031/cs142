@@ -514,39 +514,52 @@ const activityTypeLabels = {
  * get the most 5 recent activities
  */
 
-app.get("/activities", isAuthenticated, (req, res) => {
-  Activity.find({})
-  .sort({date_time: -1})
-  .limit(5)
-  .populate("user_id", "first_name last_name")
-  .populate({
-    path: "photo_id",
-    select: "file_name comments user_id"
-  })
-  .then(activities => {
-    const activitiesWithDetails = activities.map(activity => {
-      let commentText = null;
+app.get("/activities", isAuthenticated, async (req, res) => {
+  try {
+    const currentUserId = req.session.user._id;
+    const activities = await Activity.find({})
+      .sort({ date_time: -1 })
+      .populate("user_id", "first_name last_name")
+      .populate({
+        path: "photo_id",
+        select: "file_name comments user_id shared_with"
+      });
 
-      if (activity.comment_id){
+    const visibleActivities = [];
+    for (let activity of activities) {
+      if (activity.photo_id) {
         const photo = activity.photo_id;
-        const comment = photo.comments.find(c => c._id.equals(activity.comment_id));
-        commentText = comment.comment;
+        if (photo.shared_with.includes(currentUserId)) {
+          let commentText = null;
+
+          if (activity.comment_id) {
+            const comment = photo.comments.find(c => c._id.equals(activity.comment_id));
+            commentText = comment.comment;
+          }
+
+          visibleActivities.push({
+            ...activity._doc,
+            activity_type: activityTypeLabels[activity.activity_type],
+            comment_text: commentText
+          });
+        }
+      } else {
+        visibleActivities.push({
+          ...activity._doc,
+          activity_type: activityTypeLabels[activity.activity_type]
+        });
       }
 
-      return {
-        ...activity._doc,
-        activity_type: activityTypeLabels[activity.activity_type],
-        comment_text: commentText
+      if (visibleActivities.length === 5) {
+        break;
       }
-    });
+    }
 
-
-    res.json(activitiesWithDetails);
-  })
-  .catch(err => {
+    res.json(visibleActivities);
+  } catch (err) {
     console.error("Error fetching activities: ", err);
     res.status(500).send("Internal server error");
-  });
+  }
 });
 
 
