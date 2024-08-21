@@ -10,6 +10,7 @@ import UserList from "./components/UserList";
 import UserPhotos from "./components/UserPhotos";
 import LoginRegister from "./components/LoginRegister";
 import PhotoUpload from "./components/PhotoUpload";
+import Activities from "./components/Activities";
 
 
 const PhotoShare = () => {
@@ -85,6 +86,12 @@ const PhotoShare = () => {
                   path="/upload"
                   render={(props) => (
                     loggedInUser ? <PhotoUpload user={loggedInUser} /> : <Redirect to="/login" />
+                  )}
+                />
+                <Route 
+                  path="/activities"
+                  render={(props) => (
+                    loggedInUser ? <Activities {...props}  /> : <Redirect to="/login" />
                   )}
                 />
                 <Route

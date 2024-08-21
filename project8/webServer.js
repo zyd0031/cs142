@@ -51,6 +51,8 @@ app.use(bodyParser.json());
 const User = require("./schema/user.js");
 const Photo = require("./schema/photo.js");
 const SchemaInfo = require("./schema/schemaInfo.js");
+const Activity = require("./schema/activity.js");
+const ActivityTypes = require("./schema/activityTypes.js");
 
 const cs142password = require("./cs142password");
 
@@ -253,6 +255,12 @@ app.post("/admin/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid Password" });
     }
 
+    const newActivity = new Activity({
+      activity_type: ActivityTypes.USER_LOGIN,
+      user_id: user._id
+    });
+    await newActivity.save();
+
     req.session.user = user;
     res.send({_id: user._id, first_name: user.first_name});
   } catch (err){
@@ -268,11 +276,22 @@ app.post("/admin/logout", (req, res) => {
   if (!req.session.user){
     return res.status(400).send("No user is currently logged in");
   }
-  req.session.destroy((err) => {
+  const userId = req.session.user._id;
+  req.session.destroy(async (err) => {
     if (err){
       return res.status(500).send("Internal server error");
     }
-    res.status(200).send("Logout successfully");
+    try{
+      const newActivity = new Activity({
+        activity_type: ActivityTypes.USER_LOGOUT,
+        user_id: userId
+      });
+      await newActivity.save();
+      res.status(200).send("Logout successfully");
+    } catch (error){
+      console.error("Error saving logout activity: ", error);
+      res.status(500).send("Internal server error");
+    }
   });
 });
 
@@ -305,6 +324,13 @@ app.post("/user", async (req, res) => {
     });
 
     await newUser.save();
+
+    const newActivity = new Activity({
+      activity_type: ActivityTypes.USER_REGISTER,
+      user_id: newUser._id
+    });
+
+    await newActivity.save();
     res.send({login_name: newUser.login_name});
   } catch (err){
     console.log(err);
@@ -353,6 +379,14 @@ app.post("/commentsOfPhoto/:photo_id", isAuthenticated, async (req, res) => {
     photo.comments.push(newComment);
     await photo.save();
 
+    const newActivity = new Activity({
+      activity_type: ActivityTypes.NEW_COMMENT,
+      user_id: userId,
+      photo_id: photoId,
+      comment_id: newComment._id
+    });
+    await newActivity.save();
+
     res.status(200).send(photo);
   } catch (error){
     res.status(500).send("Internal server error");
@@ -388,6 +422,14 @@ app.post("/photos/new", isAuthenticated, (request, response) => {
         });
 
         await newPhoto.save();
+
+        const newActivity = new Activity({
+          activity_type: ActivityTypes.PHOTO_UPLOAD,
+          user_id: userId,
+          photo_id: newPhoto._id
+        });
+
+        await newActivity.save();
         response.status(200).send(newPhoto);
       } catch (err) {
         console.error("Error uploading photo", err);
@@ -458,6 +500,53 @@ app.get("/photos/mention/:userId", isAuthenticated, async (req, res) => {
     console.error("Error fetching photos that a user was mentioned", error);
     res.status(500).send("Internal server error");
   }
+});
+
+
+const activityTypeLabels = {
+  [ActivityTypes.PHOTO_UPLOAD]: "Photo Upload",
+  [ActivityTypes.NEW_COMMENT]: "New Comment",
+  [ActivityTypes.USER_REGISTER]: "User Register",
+  [ActivityTypes.USER_LOGIN]: "User Login",
+  [ActivityTypes.USER_LOGOUT]: "User Logout"
+};
+/**
+ * get the most 5 recent activities
+ */
+
+app.get("/activities", isAuthenticated, (req, res) => {
+  Activity.find({})
+  .sort({date_time: -1})
+  .limit(5)
+  .populate("user_id", "first_name last_name")
+  .populate({
+    path: "photo_id",
+    select: "file_name comments user_id"
+  })
+  .then(activities => {
+    const activitiesWithDetails = activities.map(activity => {
+      let commentText = null;
+
+      if (activity.comment_id){
+        const photo = activity.photo_id;
+        const comment = photo.comments.find(c => c._id.equals(activity.comment_id));
+        commentText = comment.comment;
+      }
+
+      return {
+        ...activity._doc,
+        activity_type: activityTypeLabels[activity.activity_type],
+        comment_text: commentText
+      }
+    });
+
+
+    res.json(activitiesWithDetails);
+  })
+  .catch(err => {
+    console.error("Error fetching activities: ", err);
+    res.status(500).send("Internal server error");
+  });
 });
 
 

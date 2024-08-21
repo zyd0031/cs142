@@ -60,6 +60,10 @@ const TopBar = ({ user, onLogout }) => {
     history.push("/upload");
   }
 
+  const handleActivityClicked = () => {
+    history.push("/activities");
+  }
+
   return (
     <AppBar className="cs142-topbar-appBar" position="absolute">
       <Toolbar style={{display: "flex"}}>
@@ -75,6 +79,13 @@ const TopBar = ({ user, onLogout }) => {
               <Typography variant="h5" style={{marginRight: '50px' }}>
                 Hi {user.first_name}
               </Typography>
+            <Button
+              color="inherit"
+              onClick={handleActivityClicked}
+              style={{ border: '1px solid white', marginRight: '10px' }}
+            >
+              Activities
+            </Button>
             <Button
               color="inherit"
               onClick={handleUploadClicked} 

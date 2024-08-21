@@ -27,7 +27,8 @@ const User = require("./schema/user.js");
 const Photo = require("./schema/photo.js");
 const SchemaInfo = require("./schema/schemaInfo.js");
 const cs142password = require("./cs142password");
-
+const Activity = require("./schema/activity.js");
+const ActivityTypes = require("./schema/activityTypes.js");
 const versionString = "1.0";
 
 // We start by removing anything that existing in the collections.
@@ -35,6 +36,7 @@ const removePromises = [
   User.deleteMany({}),
   Photo.deleteMany({}),
   SchemaInfo.deleteMany({}),
+  Activity.deleteMany({})
 ];
 
 Promise.all(removePromises)
@@ -94,26 +96,49 @@ Promise.all(removePromises)
           user_id: mapFakeId2RealId[photo.user_id],
           shared_with: realUserIDs
         })
-          .then(function (photoObj) {
+          .then(async function (photoObj) {
             photo.objectID = photoObj._id;
+
+            const newPhotoActivity = new Activity({
+              activity_type: ActivityTypes.PHOTO_UPLOAD,
+              user_id: photoObj.user_id,
+              photo_id: photoObj._id,
+              date_time: photoObj.date_time
+            });
+
+            await newPhotoActivity.save();
+
             if (photo.comments) {
-              photo.comments.forEach(function (comment) {
-                photoObj.comments = photoObj.comments.concat([
-                  {
-                    comment: comment.comment,
-                    date_time: comment.date_time,
-                    user_id: comment.user.objectID,
-                  },
-                ]);
+              for (const comment of photo.comments) {
+                const newComment = {
+                  comment: comment.comment,
+                  date_time: comment.date_time,
+                  user_id: comment.user.objectID,
+                };
+        
+                photoObj.comments.push(newComment);
+                await photoObj.save();
+        
+                const savedComment = photoObj.comments[photoObj.comments.length - 1];
+        
+                const newCommentActivity = new Activity({
+                  activity_type: ActivityTypes.NEW_COMMENT,
+                  user_id: comment.user.objectID,
+                  photo_id: photoObj._id,
+                  comment_id: savedComment._id, 
+                  date_time: savedComment.date_time
+                });
+        
+                await newCommentActivity.save();
+        
                 console.log(
                   "Adding comment of length %d by user %s to photo %s",
                   comment.comment.length,
                   comment.user.objectID,
                   photo.file_name
                 );
-              });
+              }
             }
-            photoObj.save();
             console.log(
               "Adding photo:",
               photo.file_name,
