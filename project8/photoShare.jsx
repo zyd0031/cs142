@@ -2,8 +2,10 @@ import React, {useState, useEffect} from "react";
 import ReactDOM from "react-dom";
 import { Grid, Typography, Paper } from "@mui/material";
 import {Route, Switch, Redirect, BrowserRouter as Router} from "react-router-dom";
+import axios from "axios";
 
 import "./styles/main.css";
+
 import TopBar from "./components/TopBar";
 import UserDetail from "./components/UserDetail";
 import UserList from "./components/UserList";
@@ -40,6 +42,18 @@ const PhotoShare = () => {
     }
   };
 
+  const handleDeleteUser = async() => {
+    if (window.confirm("Are you sure you want to delete your account?\nThis action cannot be undone.")){
+      try{
+        const response = await axios.delete(`/users/${loggedInUser._id}`);
+        setLoggedInUser(null);
+      } catch (error) {
+        console.error("Failed to delete user: ", error);
+        alert("Failed to delete account.")
+      }
+    }
+  };
+
 
 
   return (
@@ -47,7 +61,7 @@ const PhotoShare = () => {
       <div>
         <Grid container spacing={2}>
           <Grid item xs={12}>
-            <TopBar user={loggedInUser} onLogout={handleLogout} />
+            <TopBar user={loggedInUser} onLogout={handleLogout} handleUserDelete={handleDeleteUser}/>
           </Grid>
           <div className="cs142-main-topbar-buffer"></div>
           <Grid item sm={3}>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Typography, Grid, Paper, Card, CardContent, CardMedia, Button } from "@mui/material";
+import { Typography, Grid, Paper, Card, CardContent, CardMedia, Button, Box } from "@mui/material";
 import { format } from "date-fns";
 import { makeStyles } from "@mui/styles";
 import axios from "axios";
@@ -47,7 +47,7 @@ const useStyles = makeStyles({
   }
 });
 
-function UserPhotos() {
+function UserPhotos({user}) {
   const classes = useStyles();
   const { userId } = useParams();
   const [newComments, setNewComments] = useState({});
@@ -124,6 +124,24 @@ function UserPhotos() {
     });
   };
 
+  const handleDeletePhoto = async(photoId) => {
+    try{
+      await axios.delete(`/photos/${photoId}`);
+      fetchPhotos();
+    } catch (error){
+      console.error("Failed to delete photo: ", error);
+    }
+  };
+
+  const handleDeleteComment = async (photoId, commentId) => {
+    try{
+      await axios.delete(`/photos/${photoId}/comments/${commentId}`);
+      fetchPhotos();
+    } catch (error){
+      console.error("Failed to delete comment: ", error);
+    }
+  };
+
   return (
     <Grid container spacing={2} className={classes.root}>
       {photos.map((photo) => (
@@ -136,21 +154,45 @@ function UserPhotos() {
               className={classes.media}
             />
             <CardContent>
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="textSecondary" style={{marginBottom: "10px"}}>
                 Uploaded on {photo.date_time ? format(new Date(photo.date_time), "PPPpp") : 'Date unknown'}
               </Typography>
+              <Box display="flex" justifyContent="flex-end" style={{marginBottom: "10px"}}>
+                {
+                    user._id === photo.user_id && (
+                      <Button
+                        onClick={() => handleDeletePhoto(photo._id)}
+                        color="secondary"
+                        variant="contained">
+                        Delete Photo
+                      </Button>
+                    )
+                }
+              </Box>
               {(photo.comments || []).map((comment) => (
-                <Paper key={comment._id} className={classes.commentSection}>
-                  <Typography variant="body2">
+                <Paper key={comment._id} className={classes.commentSection} >
+                  <Typography variant="body2" style={{marginBottom: "10px"}}>
                     <Link to={`/users/${comment.user._id}`}>
                       {`${comment.user.first_name} ${comment.user.last_name}`}
                     </Link>
                     {" - "}
                     {comment.date_time ? format(new Date(comment.date_time), "PPPpp") : 'Date unknown'}
                   </Typography>
-                  <Typography variant="body1">
+                  <Typography variant="body1" style={{marginBottom: "10px"}}>
                     {renderCommentWithMentions(comment.comment)}
                   </Typography>
+                  <Box display="flex" justifyContent="flex-end" style={{marginBottom: "10px"}}>
+                    {
+                        user._id === comment.user_id && (
+                          <Button
+                            onClick={() => handleDeleteComment(photo._id, comment._id)}
+                            color="secondary"
+                            variant="contained">
+                            Delete Comment
+                          </Button>
+                        )
+                    }
+                  </Box>
                 </Paper>
               ))}
               <MentionsInput 

@@ -214,7 +214,6 @@ app.get("/photosOfUser/:id", isAuthenticated, function (request, response) {
                   return User.findById(comment.user_id, '_id first_name last_name')
                       .then(user => {
                           const modifiedComment = { ...comment._doc, user: user };
-                          delete modifiedComment.user_id;
                           return modifiedComment;
                       })
                       .catch(err => {
@@ -561,6 +560,89 @@ app.get("/activities", isAuthenticated, async (req, res) => {
     res.status(500).send("Internal server error");
   }
 });
+
+/**
+ * delete photo
+ */
+app.delete("/photos/:photoId", isAuthenticated, (req, res) => {
+  const photoId = req.params.photoId;
+  const userId = req.session.user._id;
+
+  Photo.findOneAndDelete({_id: photoId, user_id: userId})
+    .then ((deletedPhoto) => {
+      if (!deletedPhoto){
+        return res.status(404).send("Failed to delete the photo");
+      }
+      return Activity.deleteMany({photo_id: photoId});
+    })
+    .then (() => {
+      res.status(200).send("Successfully deleted photo");
+    })
+    .catch((err) => {
+      console.error("Error deleting photo: ", err);
+      res.status(500).send("Internal server error");
+    })
+});
+
+/**
+ * delete comment
+ */
+app.delete("/photos/:photoId/comments/:commentId", isAuthenticated, (req, res) => {
+  const {photoId, commentId} = req.params;
+  const userId = req.session.user._id;
+
+  Photo.findOneAndUpdate(
+    {_id: photoId, "comments._id": commentId, "comments.user_id": userId},
+    {$pull: {comments: {_id: commentId}}}
+  )
+    .then((photo) => {
+      if (!photo){
+        return res.status(404).send("Comment not found or not owned by the user.");
+      }
+      return Activity.deleteMany({comment_id: commentId});
+    })
+    .then (() => {
+      res.status(200).send("Comment deleted successfully.");
+    })
+    .catch((err) => {
+      console.error("Error deleting comment: ", err);
+      res.status(500).send("Internal server error.");
+    });
+});
+
+
+/**
+ * delete user
+ */
+app.delete("/users/:userId", isAuthenticated, async (req, res) => {
+  const userId = req.params.userId;
+
+  if (!req.session.user || userId !== req.session.user._id.toString()) {
+    return res.status(403).send("You can only delete your own account");
+  }
+
+  try {
+    await new Promise((resolve, reject) => {
+      req.session.destroy(err => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+
+    await Promise.all([
+      User.findByIdAndDelete(userId),
+      Photo.deleteMany({ user_id: userId }),
+      Activity.deleteMany({ user_id: userId }),
+      Photo.updateMany({}, { $pull: { comments: { user_id: userId } } })
+    ]);
+
+    res.status(200).send("User account deleted successfully.");
+  } catch (err) {
+    console.error("Error deleting user account: ", err);
+    res.status(500).send("Internal server error.");
+  }
+});
+
 
 
 const server = app.listen(3000, function () {
