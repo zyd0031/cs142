@@ -14,7 +14,8 @@ const userSchema = new mongoose.Schema({
   occupation: String,
   login_name: {type:String, required: true, unique: true},
   password_digest: { type: String, required: true },
-  salt: { type: String, required: true }
+  salt: { type: String, required: true },
+  favorites: [{type: mongoose.Schema.Types.ObjectId, ref: "Photo"}]
 });
 
 userSchema.virtual("full_name").get(function(){

@@ -142,6 +142,24 @@ function UserPhotos({user}) {
     }
   };
 
+  const handleLikePhoto = async (photoId) => {
+    try{
+      await axios.post(`/photos/${photoId}/like`);
+      fetchPhotos();
+    } catch (error){
+      console.error("Failed to like photo: ", error);
+    }
+  };
+
+  const handleUnlikePhoto = async (photoId) => {
+    try{
+      await axios.post(`/photos/${photoId}/unlike`);
+      fetchPhotos();
+    } catch (error) {
+      console.error("Failed to unlike photo: ", error);
+    }
+  };
+
   return (
     <Grid container spacing={2} className={classes.root}>
       {photos.map((photo) => (
@@ -158,6 +176,17 @@ function UserPhotos({user}) {
                 Uploaded on {photo.date_time ? format(new Date(photo.date_time), "PPPpp") : 'Date unknown'}
               </Typography>
               <Box display="flex" justifyContent="flex-end" style={{marginBottom: "10px"}}>
+                {
+                  photo.likes.includes(user._id) ? (
+                    <Button onClick={() => handleUnlikePhoto(photo._id)} color="primary" variant="contained">
+                      Unlike
+                    </Button>
+                  ) : (
+                    <Button onClick={() => handleLikePhoto(photo._id)} color="primary" variant="contained">
+                      Like
+                    </Button>
+                  )
+                }
                 {
                     user._id === photo.user_id && (
                       <Button

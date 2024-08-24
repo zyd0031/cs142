@@ -13,6 +13,7 @@ import UserPhotos from "./components/UserPhotos";
 import LoginRegister from "./components/LoginRegister";
 import PhotoUpload from "./components/PhotoUpload";
 import Activities from "./components/Activities";
+import Favorites from "./components/Favorites";
 
 
 const PhotoShare = () => {
@@ -76,6 +77,12 @@ const PhotoShare = () => {
                   path="/login"
                   render={(props) => (
                     loggedInUser ? <Redirect to="/" /> : <LoginRegister onLogin={handleLogin} />
+                  )}
+                />
+                <Route
+                  path="/favorites"
+                  render={(props) => (
+                    loggedInUser ? <Favorites {...props} /> : <Redirect to="/login" />
                   )}
                 />
                 <Route

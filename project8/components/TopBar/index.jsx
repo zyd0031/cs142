@@ -63,6 +63,10 @@ const TopBar = ({ user, onLogout, handleUserDelete }) => {
     history.push("/activities");
   }
 
+  const handleFavoriteClicked = () => {
+    history.push("/favorites");
+  }
+
   const handleAccountDelete = async() => {
     try{
       await handleUserDelete();
@@ -93,6 +97,13 @@ const TopBar = ({ user, onLogout, handleUserDelete }) => {
               style={{ border: '1px solid white', marginRight: '10px' }}
             >
               Activities
+            </Button>
+            <Button
+              color="inherit"
+              onClick={handleFavoriteClicked}
+              style={{ border: '1px solid white', marginRight: '10px' }}
+            >
+              Favorites
             </Button>
             <Button
               color="inherit"

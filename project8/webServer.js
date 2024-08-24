@@ -201,6 +201,7 @@ app.get("/photosOfUser/:id", isAuthenticated, function (request, response) {
   const currentUserId = request.session.user._id;
 
   Photo.find({user_id: userId, shared_with: currentUserId}, "-__v")
+      .sort({likes: -1, date_time: -1})
       .populate("shared_with", "_id first_name last_name")
       .then(photos => {
           if (photos.length === 0) {
@@ -643,7 +644,89 @@ app.delete("/users/:userId", isAuthenticated, async (req, res) => {
   }
 });
 
+/**
+ * like photo
+ */
+app.post("/photos/:photoId/like", isAuthenticated, async (req, res) => {
+  const photoId = req.params.photoId;
+  const userId = req.session.user._id;
 
+  try{
+    const photo = await Photo.findById(photoId);
+
+    if (!photo){
+      return res.status(404).send("Photo not found");
+    }
+
+    if (photo.likes.includes(userId)){
+      return res.status(400).send("You already liked this photo");
+    }
+
+    photo.likes.push(userId);
+    await photo.save();
+
+    await User.findByIdAndUpdate(
+      userId,
+      {$addToSet: {favorites: photoId}},
+      {new: true}
+    );
+
+    res.status(200).json(photo);
+  } catch (err){
+    console.error("Error liking photo: ", err);
+    res.status(500).send("Internal server error");
+  }
+});
+
+
+/**
+ * unlike photo
+ */
+app.post("/photos/:photoId/unlike", isAuthenticated, async (req, res) => {
+  const photoId = req.params.photoId;
+  const userId = req.session.user._id;
+
+  try{
+    const photo = await Photo.findById(photoId);
+    if (!photo) {
+      return res.status(404).send("Photo not found");
+    }
+    const likeIndex = photo.likes.indexOf(userId);
+    if (likeIndex === -1){
+      return res.status(400).send("You have not liked this photo");
+    }
+    photo.likes.splice(likeIndex, 1);
+    await photo.save();
+
+    await User.findByIdAndUpdate(
+      userId,
+      {$pull: {favorites: photoId}},
+      {new: true}
+    );
+    res.status(200).json(photo);
+  } catch(err){
+    console.error("Error unliking photo: ", err);
+    res.status(500).send("Internal server error");
+  }
+});
+
+/**
+ * get photos that user liked
+ */
+app.get("/photos/liked", isAuthenticated, async (req, res) => {
+  const userId = req.session.user._id;
+
+  try{
+    const user = await User.findById(userId).populate("favorites");
+    if (!user){
+      return res.status(404).send("User not found");
+    }
+    res.status(200).json(user.favorites);
+  } catch (err){
+    console.error("Error fetching liked photos: ", err);
+    res.status(500).send("Internal server error");
+  }
+});
 
 const server = app.listen(3000, function () {
   const port = server.address().port;
