@@ -728,6 +728,53 @@ app.get("/photos/liked", isAuthenticated, async (req, res) => {
   }
 });
 
+/**
+ * get the latest activity of each user
+ */
+app.get("/users/activity", isAuthenticated, async (req, res) => {
+  try {
+    const currentUserId = req.session.user._id;
+    const users = await User.find({}, "_id first_name last_name");
+    const activities = await Activity.find({})
+      .sort({ date_time: -1 })
+      .populate("user_id", "first_name last_name")
+      .populate({
+        path: "photo_id",
+        select: "file_name shared_with"
+      });
+
+    const userActivities = users.map(user => {
+      let userActivity = activities.find(activity => {
+        if (!activity.user_id || !activity.user_id._id.equals(user._id)) {
+          return false;
+        }
+
+        if (activity.photo_id && (!activity.photo_id.shared_with || !activity.photo_id.shared_with.includes(currentUserId))) {
+          return false;
+        }
+
+        return true;
+      });
+
+      return {
+        user: user,
+        activity: userActivity || null 
+      };
+    });
+
+    userActivities.sort((a, b) => {
+      if (a.user._id.equals(currentUserId)) return -1;  
+      if (b.user._id.equals(currentUserId)) return 1;
+      return 0; 
+    });
+    res.status(200).json(userActivities);
+  } catch (error) {
+    console.error("Error fetching users' activities: ", error);
+    res.status(500).send("Internal server error.");
+  }
+});
+
+
 const server = app.listen(3000, function () {
   const port = server.address().port;
   console.log(
